@@ -1,115 +1,159 @@
 window.addEventListener('DOMContentLoaded',() => {
-const cartWrapper = document.querySelector('.cart__wrapper'),
-        cart = document.querySelector('.cart'),
-        close = document.querySelector('.cart__close'),
-        open = document.querySelector('#cart'),
-        goodsBtn = document.querySelectorAll('.goods__btn'),
-        products = document.querySelectorAll('.goods__item'),
-        confirm = document.querySelector('.confirm'),
-        badge = document.querySelector('.nav__badge'),
-        totalCost = document.querySelector('.cart__total > span'),
-        titles = document.querySelectorAll('.goods__title');
-				empty = cartWrapper.querySelector('.empty');
 
-function openCart() {
-    cart.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-}
+	const loadContent = async(url, callback) => {
+		await fetch(url)
+		.then(response => response.json())
+		.then(json => createElement(json.goods));
+		callback();
+	}
 
-function closeCart() {
-    cart.style.display = 'none';
-    document.body.style.overflow = '';
-}
+	function createElement(arr) { 
+		const goodsWrapper = document.querySelector('.goods__wrapper');
+		arr.forEach(function(item){
+			let card = document.createElement('div');
+			card.classList.add('goods__item');
+			card.innerHTML = `
+			<img class="goods__img" src="${item.url}" alt="phone">
+			<div class="goods__colors">Доступно цветов: 4</div>
+			<div class="goods__title">
+					${item.title}
+			</div>
+			<div class="goods__price">
+					<span>${item.price}</span> руб/шт
+			</div>
+			<button class="goods__btn">Добавить в корзину</button>
+			`;
+			goodsWrapper.appendChild(card);
+		});
+	}
 
-open.addEventListener('click', openCart);
-close.addEventListener('click', closeCart);
 
-goodsBtn.forEach(function(btn, i) {
-    btn.addEventListener('click', () => {
-        let item = products[i].cloneNode(true),
-            trigger = item.querySelector('button'),
-            removeBtn = document.createElement('div');
-        trigger.remove();
+	loadContent('js/db.json', () => {
 
-				showConfirm();
-				calcGoods(1);
+		const cartWrapper = document.querySelector('.cart__wrapper'),
+		cart = document.querySelector('.cart'),
+		close = document.querySelector('.cart__close'),
+		open = document.querySelector('#cart'),
+		goodsBtn = document.querySelectorAll('.goods__btn'),
+		products = document.querySelectorAll('.goods__item'),
+		confirm = document.querySelector('.confirm'),
+		badge = document.querySelector('.nav__badge'),
+		totalCost = document.querySelector('.cart__total > span'),
+		titles = document.querySelectorAll('.goods__title');
+		empty = cartWrapper.querySelector('.empty');
 
-        removeBtn.classList.add('goods__item-remove');
-        removeBtn.innerHTML = '&times';
-        item.appendChild(removeBtn);
+		function openCart() {
+		cart.style.display = 'block';
+		document.body.style.overflow = 'hidden';
+		}
 
-				cartWrapper.appendChild(item);
+		function closeCart() {
+		cart.style.display = 'none';
+		document.body.style.overflow = '';
+		}
 
-        if (empty) {
-            empty.style.display = 'none'; //remove();
-				}
-				calcTotal();
-				removeFromCart();
-    });
-});
+		open.addEventListener('click', openCart);
+		close.addEventListener('click', closeCart);
 
-function sliceTitle() {
-titles.forEach( function(item) {
-	if( item.textContent.length < 70) {
+		goodsBtn.forEach(function(btn, i) {
+		btn.addEventListener('click', () => {
+			let item = products[i].cloneNode(true),
+					trigger = item.querySelector('button'),
+					removeBtn = document.createElement('div');
+			trigger.remove();
+			showConfirm();
+
+			removeBtn.classList.add('goods__item-remove');
+			removeBtn.innerHTML = '&times';
+			item.appendChild(removeBtn);
+			cartWrapper.appendChild(item);
+
+			if (empty) {
+					empty.style.display = 'none'; //remove();
+			}
+			calcGoods();
+			calcTotal();
+			removeFromCart();
+		});
+		});
+
+		function sliceTitle() {
+		titles.forEach( function(item) {
+		if( item.textContent.length < 55) {
 		return ;
-	}
-	else {
-		const str = item.textContent.slice(0, 71)+ '...';
+		}
+		else {
+		const str = item.textContent.slice(0, 55)+ '...';
 		item.textContent = str;
-	}
-});
-}
-sliceTitle();
+		}
+		});
+		}
+		sliceTitle();
 
+		function showConfirm(){
+		confirm.style.display = 'block';
+		let counter = 100;
+		const id = setInterval(frame, 10);
 
-function showConfirm(){
-	confirm.style.display = 'block';
-	let counter = 100;
-	const id = setInterval(frame, 10);
-
-	function frame() {
-		if( counter == 10) {
+		function frame() {
+			if( counter == 10) {
 			clearInterval(id);
 			confirm.style.display = 'none';
-
-		} else {
+			} else {
 			counter--;
 			var cc = counter-100;
 			confirm.style.transform = 'translateY(-${cc}px)';
 			confirm.style.opacity = '.' + counter;
+			}
+			}
 		}
-	}
-}
 
-function calcGoods(i) {
-	const items = cartWrapper.querySelectorAll('.goods__item');
-	badge.textContent = items.length+i;
-}
+		function calcGoods() {
+			const items = cartWrapper.querySelectorAll('.goods__item');
+			badge.textContent = items.length;
+		}
 
-function calcTotal(i) {
-	const prices = document.querySelectorAll('.cart__wrapper > .goods__item > .goods__price > span');
-	let total = 0;
-	prices.forEach( function(item) {
-		total += +item.textContent;
+		function calcTotal(i) {
+			const prices = document.querySelectorAll('.cart__wrapper > .goods__item > .goods__price > span');
+			let total = 0;
+			prices.forEach( function(item) {
+			total += +item.textContent;
+			});
+			totalCost.textContent = total;
+
+			const items = cartWrapper.querySelectorAll('.goods__item');
+			if(items.length==0)
+			empty.style.display = 'block';
+		}
+
+		function removeFromCart() {
+			const removeBtn = cartWrapper.querySelectorAll('.goods__item-remove');
+			removeBtn.forEach(function(btn){
+				btn.addEventListener('click', () => {
+					btn.parentElement.remove();
+					calcGoods();
+					calcTotal();
+				});
+			});
+		}
 	});
-	totalCost.textContent = total;
-
-	const items = cartWrapper.querySelectorAll('.goods__item');
-	if(items.length==0)
-	empty.style.display = 'block';
-}
-
-
-function removeFromCart() {
-	const removeBtn = cartWrapper.querySelectorAll('.goods__item-remove');
-	removeBtn.forEach(function(btn){
-		btn.addEventListener('click', () => {
-			btn.parentElement.remove();
-			calcGoods(0);
-			calcTotal();
-
-		});
-	});
-}
 
 });
+
+
+
+
+
+//{ username: "Oleg"};
+
+// fetch('https://jsonplaceholder.typicode.com/todos/1')
+//   .then(response => response.json())
+//   .then(json => console.log(json));
+
+	// fetch('https://jsonplaceholder.typicode.com/posts',
+	// {
+	// 	method: "POST",
+	// 	body: JSON.stringify(ex)
+	// })
+  // .then(response => response.json())
+  // .then(json => console.log(json));
